@@ -1,7 +1,7 @@
 ARG BUILDER
 FROM ${BUILDER} as builder
 
-FROM python:3.7-alpine3.17
+FROM python:3.12-alpine
 
 ENV OPERATOR=/usr/local/bin/spinnaker-operator \
     USER_UID=1001 \
@@ -10,7 +10,7 @@ ENV OPERATOR=/usr/local/bin/spinnaker-operator \
     KUBECTL_RELEASE=1.17.7 \
     AWS_CLI_VERSION=1.18.109 \
     OPERATOR_HOME=/opt/spinnaker-operator \
-    GOOGLE_CLOUD_SDK_VERSION=313.0.1 \
+    GOOGLE_CLOUD_SDK_VERSION=486.0.0 \
     PATH="$PATH:/usr/local/bin/:/opt/google-cloud-sdk/bin/:/usr/local/bin/aws-iam-authenticator"
 
 EXPOSE 8383
@@ -26,7 +26,6 @@ RUN wget -nv https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-c
   && rm /google-cloud-sdk-${GOOGLE_CLOUD_SDK_VERSION}-linux-x86_64.tar.gz \
   && CLOUDSDK_PYTHON="python3" /opt/google-cloud-sdk/install.sh --usage-reporting=false --bash-completion=false  --additional-components app-engine-java app-engine-go \
   && rm -rf ~/.config/gcloud \
-  && gcloud components remove --quiet anthoscli \
   && rm -rf /opt/google-cloud-sdk/.install/.backup
 
 # kubectl + AWS IAM authenticator
