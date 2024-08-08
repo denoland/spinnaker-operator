@@ -17,13 +17,13 @@
 VERSION_TYPE    ?= "snapshot" # Must be one of: "snapshot", "rc", or "release"
 BRANCH_OVERRIDE ?=
 VERSION 	 	?= $(shell build-tools/version.sh $(VERSION_TYPE) $(BRANCH_OVERRIDE))
-REGISTRY_ORG    ?= "armory"
+REGISTRY_ORG    ?= "willnewby"
 OS      	 	?= $(shell go version | cut -d' ' -f 4 | cut -d'/' -f 1)
 ARCH    	 	?= $(shell go version | cut -d' ' -f 4 | cut -d'/' -f 2)
 NAMESPACE 	 	?= "spinnaker-operator"
 PWD 		  	= $(shell pwd)
 
-REGISTRY        ?= docker.io
+REGISTRY        ?= ghcr.io
 SRC_DIRS        := cmd pkg integration-tests
 COMMAND         := cmd/manager/main
 BUILD_HOME      := ${PWD}/build
