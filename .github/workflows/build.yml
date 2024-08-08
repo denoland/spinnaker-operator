@@ -8,6 +8,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -34,29 +38,29 @@ jobs:
             echo "Building release candidate"
             build_type=rc
             branch_override=${{ github.base_ref }}
-            registry=docker.io
+            registry=ghcr.io
 
           # On any build running on master branch, build RC versions
           elif [[ ${{ github.ref }} = "refs/heads/master" ]]
           then
             echo "Building release candidate"
             build_type=rc
-            registry=docker.io
+            registry=ghcr.io
 
           # On any build running on release branches, build final release
           elif [[ ${{ github.ref }} =~ ^refs/heads/release-* ]]
           then
             echo "Building final release"
             build_type=release
-            registry=docker.io
+            registry=ghcr.io
 
           else
             echo "Building snapshot"
             build_type=snapshot
-            registry=armory-docker-local.jfrog.io
+            registry=ghcr.io
           fi
 
-          make_args="VERSION_TYPE=$build_type REGISTRY=$registry REGISTRY_ORG=armory BRANCH_OVERRIDE=$branch_override"
+          make_args="VERSION_TYPE=$build_type REGISTRY=$registry REGISTRY_ORG=willnewby BRANCH_OVERRIDE=$branch_override"
           version=$(make version $make_args)
           echo "Version: $version"
 
@@ -73,10 +77,10 @@ jobs:
         uses: mikefarah/yq@v4.30.7
         with:
           cmd: |
-            yq -i '.spec.template.spec.containers[0].image = "armory/spinnaker-operator:${{ steps.build_type.outputs.version }}"' deploy/operator/basic/deployment.yaml
-            yq -i '.spec.template.spec.containers[0].image = "armory/spinnaker-operator:${{ steps.build_type.outputs.version }}"' deploy/operator/cluster/deployment.yaml
-            yq -i '.spec.template.spec.containers[1].image = "armory/halyard:${{ steps.build_type.outputs.version }}"' deploy/operator/basic/deployment.yaml
-            yq -i '.spec.template.spec.containers[1].image = "armory/halyard:${{ steps.build_type.outputs.version }}"' deploy/operator/cluster/deployment.yaml
+            yq -i '.spec.template.spec.containers[0].image = "ghcr.io/willnewby/spinnaker-operator:${{ steps.build_type.outputs.version }}"' deploy/operator/basic/deployment.yaml
+            yq -i '.spec.template.spec.containers[0].image = "ghcr.io/willnewby/spinnaker-operator:${{ steps.build_type.outputs.version }}"' deploy/operator/cluster/deployment.yaml
+            yq -i '.spec.template.spec.containers[1].image = "ghcr.io/willnewby/halyard:${{ steps.build_type.outputs.version }}"' deploy/operator/basic/deployment.yaml
+            yq -i '.spec.template.spec.containers[1].image = "ghcr.io/willnewby/halyard:${{ steps.build_type.outputs.version }}"' deploy/operator/cluster/deployment.yaml
 
         # We need to do this for at least a few versions so that we don't force
         # users to manually fix the CRDs when migrating from v1beta1 to v1.
@@ -97,14 +101,7 @@ jobs:
 
       - name: Login to docker registry
         run: |
-          if [[ ${{ steps.build_type.outputs.registry }} = "docker.io" ]]
-          then
-            echo "Logging in to dockerhub"
-            docker login -u ${{ secrets.DOCKERHUB_USER }} -p "${{ secrets.DOCKERHUB_PASSWORD }}" docker.io
-          else
-            echo "Logging in to jfrog"
-            docker login -u ${{ secrets.JFROG_USER }} -p "${{ secrets.JFROG_PASSWORD }}" armory-docker-local.jfrog.io
-          fi
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push
         run: |
@@ -152,7 +149,7 @@ jobs:
 #        run: |
 #          kind load docker-image ${{ steps.build_type.outputs.registry }}/armory/spinnaker-operator:${{ steps.build_type.outputs.version }}
 #          halyard=$(cat halyard-version | head -1)
-#          export HALYARD_IMAGE="armory/halyard:$halyard"
+#          export HALYARD_IMAGE="ghcr.io/willnewby/halyard:$halyard"
 #          make integration-test
 
       - name: Create Release
